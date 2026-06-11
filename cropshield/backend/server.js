@@ -11,6 +11,7 @@ import memoryRouter from './routes/memory.js';
 import outbreakRouter from './routes/outbreak.js';
 import alertsRouter from './routes/alerts.js';
 import farmsRouter from './routes/farms.js';
+import mcpRouter from './routes/mcp.js';
 
 dotenv.config();
 
@@ -34,6 +35,7 @@ app.use('/api/memory', memoryRouter);
 app.use('/api/outbreak', outbreakRouter);
 app.use('/api/alerts', alertsRouter);
 app.use('/api/farms', farmsRouter);
+app.use('/mcp', mcpRouter);
 
 // Serve frontend for all non-API routes
 app.get('*', (_req, res) => {
