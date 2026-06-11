@@ -93,19 +93,38 @@ const TOOLS = [
   }
 ];
 
+function num(v) { return parseFloat(String(v).replace('%', '')) || 0; }
+function str(v) { return String(v || '').trim(); }
+function bool(v) { return v === true || v === 'true' || v === 1; }
+
 async function callTool(name, args) {
   switch (name) {
     case 'analyzePhoto':
-      return await analyzeImage(args.imageBase64, args.cropType);
+      return await analyzeImage(args.imageBase64, args.cropType || args.crop_type || 'unknown');
 
-    case 'checkFoodSafety':
-      return calculateFoodSafety(args.affectedPercent, args.fieldSizeAcres, args.cropType);
+    case 'checkFoodSafety': {
+      // Accept any variation of parameter names the LLM might send
+      const pct = num(args.affectedPercent ?? args.affected_percent ?? args.affectedPercentage ?? args.affected_percentage ?? args.percentage ?? 5);
+      const acres = num(args.fieldSizeAcres ?? args.field_size_acres ?? args.fieldSize ?? args.field_size ?? args.acres ?? 1);
+      const crop = str(args.cropType ?? args.crop_type ?? args.crop ?? 'unknown');
+      return calculateFoodSafety(pct, acres, crop);
+    }
 
-    case 'queryVillageMemory':
-      return await queryMemory(args.pestName, args.district, args.incidentData || {});
+    case 'queryVillageMemory': {
+      const pest = str(args.pestName ?? args.pest_name ?? args.pest ?? 'Unknown');
+      const dist = str(args.district ?? args.location ?? 'Unknown');
+      return await queryMemory(pest, dist, args.incidentData || args.incident_data || {});
+    }
 
-    case 'assessOutbreak':
-      return await assessSpread(args.pestName, args.spreadable, args.latitude, args.longitude, args.severity, args.cropType);
+    case 'assessOutbreak': {
+      const pest = str(args.pestName ?? args.pest_name ?? args.pest ?? 'Unknown');
+      const spreadable = bool(args.spreadable ?? args.can_spread ?? true);
+      const lat = num(args.latitude ?? args.lat ?? 12.97);
+      const lng = num(args.longitude ?? args.lng ?? args.lon ?? 77.59);
+      const sev = str(args.severity ?? 'MEDIUM').toUpperCase();
+      const crop = str(args.cropType ?? args.crop_type ?? args.crop ?? 'unknown');
+      return await assessSpread(pest, spreadable, lat, lng, sev, crop);
+    }
 
     case 'sendAlerts':
       return await sendAlerts(
