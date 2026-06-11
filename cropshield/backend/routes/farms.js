@@ -1,19 +1,36 @@
 import { Router } from 'express';
+import Farm from '../models/Farm.js';
 
 const router = Router();
 
-const farms = [
-  {
-    id: 'farm-1',
-    name: 'Rampur East Field',
-    village: 'Rampur',
-    crop: 'Tomato',
-    location: { lat: 26.9124, lng: 75.7873 }
+router.get('/', async (_req, res, next) => {
+  try {
+    const farms = await Farm.find();
+    res.json({ farms });
+  } catch (err) {
+    next(err);
   }
-];
+});
 
-router.get('/', (_req, res) => {
-  res.json({ farms });
+router.get('/near', async (req, res, next) => {
+  try {
+    const lat = parseFloat(req.query.lat);
+    const lng = parseFloat(req.query.lng);
+    const radius = parseFloat(req.query.radius) || 15;
+
+    const farms = await Farm.find({
+      location: {
+        $nearSphere: {
+          $geometry: { type: 'Point', coordinates: [lng, lat] },
+          $maxDistance: radius * 1000
+        }
+      }
+    });
+
+    res.json({ farms });
+  } catch (err) {
+    next(err);
+  }
 });
 
 export default router;

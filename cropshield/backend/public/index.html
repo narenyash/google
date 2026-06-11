@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CropShield — AI Crop Disease Detection</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; }
+    .tab-active { border-bottom: 3px solid #16a34a; color: #16a34a; font-weight: 600; }
+    .zone-red { background: #fee2e2; border-left: 4px solid #dc2626; }
+    .zone-orange { background: #ffedd5; border-left: 4px solid #ea580c; }
+    .zone-yellow { background: #fefce8; border-left: 4px solid #ca8a04; }
+    .spinner { border: 3px solid #e5e7eb; border-top: 3px solid #16a34a; border-radius: 50%; width: 28px; height: 28px; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .result-card { transition: all 0.3s ease; }
+    #preview-img { max-height: 200px; object-fit: contain; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-green-700 text-white shadow-md">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
+      <span class="text-3xl">🌱</span>
+      <div>
+        <h1 class="text-xl font-bold tracking-tight">CropShield</h1>
+        <p class="text-green-200 text-xs">AI-Powered Crop Disease Detection & Alert System</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="bg-white border-b shadow-sm">
+    <div class="max-w-5xl mx-auto px-4 flex gap-6">
+      <button onclick="showTab('analyze')" id="tab-analyze" class="py-3 px-1 text-sm tab-active">Analyze Crop</button>
+      <button onclick="showTab('alerts')" id="tab-alerts" class="py-3 px-1 text-sm text-gray-500">Alerts</button>
+      <button onclick="showTab('farms')" id="tab-farms" class="py-3 px-1 text-sm text-gray-500">Farms</button>
+    </div>
+  </div>
+
+  <main class="max-w-5xl mx-auto px-4 py-6">
+
+    <!-- ── ANALYZE TAB ── -->
+    <div id="page-analyze">
+      <div class="grid md:grid-cols-2 gap-6">
+
+        <!-- Form -->
+        <div class="bg-white rounded-xl shadow p-5">
+          <h2 class="text-base font-semibold text-gray-700 mb-4">Upload Crop Photo</h2>
+          <form id="analyze-form" class="space-y-4">
+
+            <div>
+              <label class="text-sm text-gray-600 block mb-1">Crop Photo *</label>
+              <input type="file" id="photo" accept="image/*" required
+                class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                onchange="previewImage(this)" />
+              <img id="preview-img" class="mt-2 rounded-lg hidden w-full" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-sm text-gray-600 block mb-1">Crop Type *</label>
+                <select id="cropType" class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
+                  <option value="tomato">Tomato</option>
+                  <option value="maize">Maize</option>
+                  <option value="wheat">Wheat</option>
+                  <option value="rice">Rice</option>
+                  <option value="onion">Onion</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-sm text-gray-600 block mb-1">Field Size (acres)</label>
+                <input type="number" id="fieldSize" value="3" min="0.1" step="0.1"
+                  class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-sm text-gray-600 block mb-1">Latitude</label>
+                <input type="number" id="latitude" value="12.9716" step="0.0001"
+                  class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
+              </div>
+              <div>
+                <label class="text-sm text-gray-600 block mb-1">Longitude</label>
+                <input type="number" id="longitude" value="77.5946" step="0.0001"
+                  class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-sm text-gray-600 block mb-1">Farm Name</label>
+                <input type="text" id="farmName" value="My Farm"
+                  class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
+              </div>
+              <div>
+                <label class="text-sm text-gray-600 block mb-1">District</label>
+                <input type="text" id="district" value="Bangalore Rural"
+                  class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
+              </div>
+            </div>
+
+            <button type="submit" id="submit-btn"
+              class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-2">
+              <span>Analyze Crop</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Results Panel -->
+        <div id="results-panel" class="space-y-4">
+          <div class="bg-white rounded-xl shadow p-5 text-center text-gray-400 text-sm h-full flex items-center justify-center min-h-40">
+            Upload a photo and click Analyze to see results
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ALERTS TAB ── -->
+    <div id="page-alerts" class="hidden">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-base font-semibold text-gray-700">Recent Alerts</h2>
+        <button onclick="loadAlerts()" class="text-sm bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700">Refresh</button>
+      </div>
+      <div id="alerts-list" class="space-y-3">
+        <p class="text-gray-400 text-sm text-center py-8">Loading alerts...</p>
+      </div>
+    </div>
+
+    <!-- ── FARMS TAB ── -->
+    <div id="page-farms" class="hidden">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-base font-semibold text-gray-700">Registered Farms</h2>
+        <button onclick="loadFarms()" class="text-sm bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700">Refresh</button>
+      </div>
+      <div id="farms-list" class="grid md:grid-cols-2 gap-4">
+        <p class="text-gray-400 text-sm text-center py-8 col-span-2">Loading farms...</p>
+      </div>
+    </div>
+
+  </main>
+
+<script>
+const BASE = window.location.origin;
+
+// ── Tab navigation ──────────────────────────────────────────
+function showTab(tab) {
+  ['analyze','alerts','farms'].forEach(t => {
+    document.getElementById('page-'+t).classList.add('hidden');
+    document.getElementById('tab-'+t).classList.remove('tab-active');
+    document.getElementById('tab-'+t).classList.add('text-gray-500');
+  });
+  document.getElementById('page-'+tab).classList.remove('hidden');
+  document.getElementById('tab-'+tab).classList.add('tab-active');
+  document.getElementById('tab-'+tab).classList.remove('text-gray-500');
+  if (tab === 'alerts') loadAlerts();
+  if (tab === 'farms') loadFarms();
+}
+
+// ── Image preview ───────────────────────────────────────────
+function previewImage(input) {
+  const img = document.getElementById('preview-img');
+  if (input.files && input.files[0]) {
+    img.src = URL.createObjectURL(input.files[0]);
+    img.classList.remove('hidden');
+  }
+}
+
+// ── Severity badge ──────────────────────────────────────────
+function severityBadge(s) {
+  const map = { HIGH: 'bg-red-100 text-red-700', MEDIUM: 'bg-yellow-100 text-yellow-700', LOW: 'bg-green-100 text-green-700' };
+  return `<span class="text-xs font-semibold px-2 py-0.5 rounded-full ${map[s]||'bg-gray-100 text-gray-600'}">${s}</span>`;
+}
+
+// ── Analyze form submit ────────────────────────────────────
+document.getElementById('analyze-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const btn = document.getElementById('submit-btn');
+  btn.innerHTML = '<div class="spinner"></div><span>Analyzing...</span>';
+  btn.disabled = true;
+
+  const panel = document.getElementById('results-panel');
+  panel.innerHTML = '<div class="bg-white rounded-xl shadow p-5 flex items-center justify-center gap-3 text-gray-500 text-sm min-h-40"><div class="spinner"></div> Running AI analysis...</div>';
+
+  const file = document.getElementById('photo').files[0];
+  const cropType = document.getElementById('cropType').value;
+  const fieldSizeAcres = parseFloat(document.getElementById('fieldSize').value) || 3;
+  const latitude = parseFloat(document.getElementById('latitude').value);
+  const longitude = parseFloat(document.getElementById('longitude').value);
+  const district = document.getElementById('district').value;
+
+  try {
+    // Step 1 — Vision
+    const formData = new FormData();
+    formData.append('photo', file);
+    formData.append('cropType', cropType);
+    const vRes = await fetch(`${BASE}/api/vision`, { method: 'POST', body: formData });
+    const vision = await vRes.json();
+
+    // Step 2 — Food Safety
+    const fsRes = await fetch(`${BASE}/api/foodsafety`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ affectedPercent: vision.affectedPercent, fieldSizeAcres, cropType })
+    });
+    const safety = await fsRes.json();
+
+    // Step 3 — Memory
+    const memRes = await fetch(`${BASE}/api/memory`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pestName: vision.pest, district,
+        incidentData: { ...vision, cropType, fieldSizeAcres, district, latitude, longitude }
+      })
+    });
+    const memory = await memRes.json();
+
+    // Step 4 — Outbreak
+    const obRes = await fetch(`${BASE}/api/outbreak`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pestName: vision.pest, spreadable: vision.spreadable, latitude, longitude, severity: vision.severity, cropType })
+    });
+    const outbreak = await obRes.json();
+
+    // Step 5 — Alerts (only if spreadable)
+    let alerts = null;
+    if (outbreak.spreadable && outbreak.totalAtRiskFarms > 0) {
+      const alRes = await fetch(`${BASE}/api/alerts`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          redZoneFarms: outbreak.redZoneFarms || [],
+          orangeZoneFarms: outbreak.orangeZoneFarms || [],
+          yellowZoneFarms: outbreak.yellowZoneFarms || [],
+          pestName: vision.pest, diseaseName: vision.diseaseName,
+          severity: vision.severity, originFarmId: 'web-upload'
+        })
+      });
+      alerts = await alRes.json();
+    }
+
+    renderResults(vision, safety, memory, outbreak, alerts);
+
+  } catch (err) {
+    panel.innerHTML = `<div class="bg-white rounded-xl shadow p-5 text-red-500 text-sm">Error: ${err.message}</div>`;
+  }
+
+  btn.innerHTML = '<span>Analyze Crop</span>';
+  btn.disabled = false;
+});
+
+// ── Render all results ─────────────────────────────────────
+function renderResults(vision, safety, memory, outbreak, alerts) {
+  const panel = document.getElementById('results-panel');
+  panel.innerHTML = `
+
+    <!-- Detection -->
+    <div class="bg-white rounded-xl shadow p-4 result-card">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="font-semibold text-gray-700 text-sm">Disease Detection</h3>
+        ${severityBadge(vision.severity)}
+      </div>
+      <p class="text-lg font-bold text-gray-800">${vision.diseaseName}</p>
+      <p class="text-xs text-gray-400 italic mb-2">${vision.scientificName}</p>
+      <div class="grid grid-cols-2 gap-2 text-xs text-gray-600">
+        <div class="bg-gray-50 rounded p-2"><span class="text-gray-400">Pest</span><br/><b>${vision.pest}</b></div>
+        <div class="bg-gray-50 rounded p-2"><span class="text-gray-400">Stage</span><br/><b>${vision.infectionStage}</b></div>
+        <div class="bg-gray-50 rounded p-2"><span class="text-gray-400">Affected</span><br/><b>${vision.affectedPercent}%</b></div>
+        <div class="bg-gray-50 rounded p-2"><span class="text-gray-400">Confidence</span><br/><b>${vision.confidence}%</b></div>
+      </div>
+      <div class="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-700">
+        <b>Treatment:</b> ${vision.treatment}
+      </div>
+    </div>
+
+    <!-- Food Safety -->
+    <div class="bg-white rounded-xl shadow p-4 result-card">
+      <h3 class="font-semibold text-gray-700 text-sm mb-2">Food Safety & Pesticide</h3>
+      <div class="grid grid-cols-2 gap-2 text-xs text-gray-600">
+        <div class="bg-green-50 rounded p-2"><span class="text-gray-400">Pesticide Saved</span><br/><b class="text-green-700 text-base">${safety.pesticideSavedPercent}%</b></div>
+        <div class="bg-green-50 rounded p-2"><span class="text-gray-400">CropShield Spray</span><br/><b class="text-base">${safety.cropShieldSprayPercent}%</b></div>
+        <div class="bg-gray-50 rounded p-2"><span class="text-gray-400">Total Yield</span><br/><b>${safety.totalYieldKg} kg</b></div>
+        <div class="bg-gray-50 rounded p-2"><span class="text-gray-400">Safe Food</span><br/><b>${safety.contaminationPreventedKg} kg</b></div>
+      </div>
+      <p class="text-xs text-green-700 mt-2 bg-green-50 rounded p-2">${safety.comparisonMessage}</p>
+    </div>
+
+    <!-- Village Memory -->
+    <div class="bg-white rounded-xl shadow p-4 result-card">
+      <h3 class="font-semibold text-gray-700 text-sm mb-2">Village Memory</h3>
+      <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-2">
+        <div class="bg-gray-50 rounded p-2"><span class="text-gray-400">Historical Cases</span><br/><b>${memory.historicalCasesFound}</b></div>
+        <div class="bg-gray-50 rounded p-2"><span class="text-gray-400">Avg Pesticide Saved</span><br/><b>${memory.averagePesticideSaved}%</b></div>
+        <div class="bg-gray-50 rounded p-2"><span class="text-gray-400">Success Rate</span><br/><b class="text-green-700">${memory.successRate}</b></div>
+        <div class="bg-gray-50 rounded p-2"><span class="text-gray-400">First Case?</span><br/><b>${memory.isFirstCase ? 'Yes' : 'No'}</b></div>
+      </div>
+      <p class="text-xs text-gray-600 bg-yellow-50 rounded p-2">${memory.recommendation}</p>
+    </div>
+
+    <!-- Outbreak -->
+    <div class="bg-white rounded-xl shadow p-4 result-card">
+      <h3 class="font-semibold text-gray-700 text-sm mb-2">Spread Assessment</h3>
+      ${outbreak.spreadable ? `
+        <div class="grid grid-cols-3 gap-2 text-xs text-gray-600 mb-2">
+          <div class="zone-red rounded p-2 text-center"><span class="text-gray-400">24h Radius</span><br/><b>${outbreak.spreadRadius24hr} km</b><br/><span class="text-red-600 font-semibold">${(outbreak.redZoneFarms||[]).length} farms</span></div>
+          <div class="zone-orange rounded p-2 text-center"><span class="text-gray-400">48h Radius</span><br/><b>${outbreak.spreadRadius48hr} km</b><br/><span class="text-orange-600 font-semibold">${(outbreak.orangeZoneFarms||[]).length} farms</span></div>
+          <div class="zone-yellow rounded p-2 text-center"><span class="text-gray-400">72h Radius</span><br/><b>${outbreak.spreadRadius72hr} km</b><br/><span class="text-yellow-600 font-semibold">${(outbreak.yellowZoneFarms||[]).length} farms</span></div>
+        </div>
+        <div class="text-xs text-gray-500">Wind: ${outbreak.windSpeed} m/s · Humidity: ${outbreak.humidity}% · Total at risk: <b>${outbreak.totalAtRiskFarms}</b> farms</div>
+        ${alerts ? `<div class="mt-2 bg-red-50 rounded p-2 text-xs text-red-700"><b>Alerts sent:</b> ${alerts.totalAlertsSent} farms notified</div>` : ''}
+      ` : `
+        <div class="bg-green-50 rounded p-3 text-xs text-green-700">This disease does not spread to neighboring farms. No community alert needed.</div>
+      `}
+    </div>
+  `;
+}
+
+// ── Load Alerts ─────────────────────────────────────────────
+async function loadAlerts() {
+  const el = document.getElementById('alerts-list');
+  el.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">Loading...</p>';
+  try {
+    const res = await fetch(`${BASE}/api/alerts`);
+    const data = await res.json();
+    const alerts = Array.isArray(data) ? data : (data.alerts || []);
+    if (!alerts.length) {
+      el.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">No alerts yet.</p>';
+      return;
+    }
+    const zoneColor = { RED: 'zone-red', ORANGE: 'zone-orange', YELLOW: 'zone-yellow' };
+    el.innerHTML = alerts.map(a => `
+      <div class="bg-white rounded-xl shadow p-4 ${zoneColor[a.zone]||''}">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-gray-500">${a.zone || ''} ZONE</span>
+          <span class="text-xs text-gray-400">${new Date(a.sentAt).toLocaleString()}</span>
+        </div>
+        <p class="font-semibold text-sm text-gray-800 mt-1">${a.pest} — ${a.diseaseName}</p>
+        <p class="text-xs text-gray-600 mt-1">${a.message}</p>
+        <p class="text-xs text-gray-400 mt-1">To: ${a.ownerName || a.toFarmId} · Risk: ${a.riskLevel}</p>
+      </div>
+    `).join('');
+  } catch (err) {
+    el.innerHTML = `<p class="text-red-400 text-sm text-center py-8">Error: ${err.message}</p>`;
+  }
+}
+
+// ── Load Farms ──────────────────────────────────────────────
+async function loadFarms() {
+  const el = document.getElementById('farms-list');
+  el.innerHTML = '<p class="text-gray-400 text-sm text-center py-8 col-span-2">Loading...</p>';
+  try {
+    const res = await fetch(`${BASE}/api/farms`);
+    const data = await res.json();
+    const farms = Array.isArray(data) ? data : (data.farms || []);
+    if (!farms.length) {
+      el.innerHTML = '<p class="text-gray-400 text-sm text-center py-8 col-span-2">No farms registered yet.</p>';
+      return;
+    }
+    el.innerHTML = farms.map(f => `
+      <div class="bg-white rounded-xl shadow p-4">
+        <div class="flex items-center justify-between mb-1">
+          <p class="font-semibold text-gray-800 text-sm">${f.name || f.farmId}</p>
+          <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">${f.cropType}</span>
+        </div>
+        <p class="text-xs text-gray-500">${f.ownerName || ''} · ${f.village || ''}, ${f.district || ''}</p>
+        <p class="text-xs text-gray-400 mt-1">${f.fieldSizeAcres || '?'} acres · ${f.language || 'kannada'}</p>
+      </div>
+    `).join('');
+  } catch (err) {
+    el.innerHTML = `<p class="text-red-400 text-sm text-center py-8 col-span-2">Error: ${err.message}</p>`;
+  }
+}
+</script>
+</body>
+</html>

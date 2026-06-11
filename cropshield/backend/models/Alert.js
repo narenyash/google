@@ -2,11 +2,17 @@ import mongoose from 'mongoose';
 
 const alertSchema = new mongoose.Schema(
   {
-    incidentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Incident' },
+    fromFarmId: { type: String },
+    toFarmId: { type: String },
+    ownerName: { type: String },
+    pest: { type: String },
+    diseaseName: { type: String },
+    riskLevel: { type: String },
+    zone: { type: String, enum: ['RED', 'ORANGE', 'YELLOW'] },
     message: { type: String, required: true },
-    channels: [{ type: String }],
-    recipients: Number,
-    status: { type: String, enum: ['queued', 'sent', 'failed'], default: 'queued' }
+    language: { type: String, default: 'kannada' },
+    sentAt: { type: Date, default: Date.now },
+    status: { type: String, enum: ['sent', 'failed'], default: 'sent' }
   },
   { timestamps: true }
 );
