@@ -134,13 +134,14 @@ router.post('/', async (req, res) => {
     let result;
 
     if (method === 'initialize') {
+      const clientVersion = params?.protocolVersion || '2025-03-26';
       result = {
-        protocolVersion: '2024-11-05',
+        protocolVersion: clientVersion,
         capabilities: { tools: {} },
         serverInfo: { name: 'cropshield', version: '1.0.0' }
       };
     } else if (method === 'notifications/initialized') {
-      return res.status(204).end();
+      return res.json({ jsonrpc: '2.0', result: {}, id: id || null });
     } else if (method === 'ping') {
       result = {};
     } else if (method === 'tools/list') {
